@@ -1,0 +1,28 @@
+# Virtual env
+.venv/
+
+# Django secrets
+.env
+*.env
+__pycache__/
+*.pyc
+db.sqlite3
+media/
+# VSCode settings
+.vscode/
+.idea/
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+.cache
+
+
