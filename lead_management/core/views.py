@@ -1,35 +1,61 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import action
+from .models import Lead
+from .serializers import LeadSerializer
+from .pagination import LeadPagination
 
 
-# Create your views here.
-def lead(request):
-     data=request.parse(request.body)
-     insert_into_db(data)
-     return HttpResponse("Lead created successfully", status=201)
-
-def insert_into_db(data):
-     name=data.get("name")
-     if not name:
-            return HttpResponse("Name is required", status=400)
-     age=data.get("age")
-     if not age:
-            return HttpResponse("Age is required", status=400)
-     email=data.get("email")
-     if not email:
-            return HttpResponse("Email is required", status=400)
-     place=data.get("place")
-     if not place:
-            return HttpResponse("Place is required", status=400)
-     status=data.get("status")
-     if not status:
-            return HttpResponse("Status is required", status=400)
-     image_url=data.get("image_url")
-     if not image_url:
-            return HttpResponse("Image URL is required", status=400)
-     remarks=data.get("remarks")
-     if not remarks:
-            return HttpResponse("Remarks is required", status=400)
-     db.query("INSERT INTO lead(name, age, email, place, status, image_url, remarks) VALUES (name, age, email, place, status, image_url, remarks)")
-     db.commit()
-     db.close()
+class LeadViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and editing Lead instances.
+    Provides CRUD operations: Create, Read, Update, Delete
+    
+    Endpoints:
+    - GET /api/leads/ - List all leads (paginated)
+      Query parameters:
+        - page: Page number (default: 1)
+        - page_size: Number of items per page (default: 10, max: 100)
+    - POST /api/leads/ - Create a new lead
+    - GET /api/leads/{id}/ - Get a specific lead
+    - PUT /api/leads/{id}/ - Update a lead (full update - all fields required)
+    - PATCH /api/leads/{id}/ - Partially update a lead (only send fields to update)
+    - DELETE /api/leads/{id}/ - Delete a lead
+    """
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+    pagination_class = LeadPagination
+    
+    def update(self, request, *args, **kwargs):
+        """
+        Handle PUT request - Full update of a lead.
+        All fields must be provided.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Handle PATCH request - Partial update of a lead.
+        Only send the fields you want to update.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Handle DELETE request - Delete a lead from the database.
+        """
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {'message': 'Lead deleted successfully'}, 
+            status=status.HTTP_204_NO_CONTENT
+        )
